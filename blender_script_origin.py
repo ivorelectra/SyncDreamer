@@ -43,7 +43,7 @@ def save_pickle(data, pkl_path):
         pickle.dump(data, f)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--object_path", type=str, required=False)
+parser.add_argument("--object_path", type=str, required=True)
 parser.add_argument("--output_dir", type=str, required=True)
 parser.add_argument("--engine", type=str, default="CYCLES", choices=["CYCLES", "BLENDER_EEVEE"])
 parser.add_argument("--camera_type", type=str, default='even')
@@ -52,7 +52,6 @@ parser.add_argument("--elevation", type=float, default=30)
 parser.add_argument("--elevation_start", type=float, default=-10)
 parser.add_argument("--elevation_end", type=float, default=40)
 parser.add_argument("--device", type=str, default='CUDA')
-parser.add_argument("--object_paths_json", type=str, required=False)
 
 argv = sys.argv[sys.argv.index("--") + 1 :]
 args = parser.parse_args(argv)
@@ -163,7 +162,6 @@ def reset_scene() -> None:
 # load the glb model
 def load_object(object_path: str) -> None:
     """Loads a glb model into the scene."""
-    print("object_path: ", object_path)
     if object_path.endswith(".glb"):
         bpy.ops.import_scene.gltf(filepath=object_path, merge_vertices=True)
     elif object_path.endswith(".fbx"):
@@ -280,22 +278,5 @@ def save_images(object_file: str) -> None:
         cam_poses = np.stack(cam_poses, 0)
         save_pickle([K, azimuths, elevations, distances, cam_poses], os.path.join(args.output_dir, object_uid, "meta.pkl"))
 
-def load_object_paths(json_path):
-    with open(json_path, 'r') as f:
-        return json.load(f)
-
-BASE_PATH = "/mnt/data/zhouzihan/objaverse_/"
-tot = 0
 if __name__ == "__main__":
-    object_paths = load_object_paths(args.object_paths_json)
-    for object_path in object_paths:
-        object_path = os.path.join(BASE_PATH, object_path)
-        print(object_path)
-        if os.path.exists(object_path):
-            save_images(object_path)
-            tot += 1
-        else:
-            print(f"File not found: {object_path}") 
-    print(f"render images of {tot} 3D models")
-    
-# /mnt/data/zhouzihan/blender-4.0.1-linux-x64/blender -b -P blender_script.py -- --object_paths_json /home/zhouzihan/SyncDreamer/input_models_path-lvis_0.json --output_dir ./views --camera_type random
+    save_images(args.object_path)
